@@ -5,3 +5,4 @@
 - [Rust](./docs//rust.md)
 - [Go](./docs//go.md)
 - [TypeScript](./docs//typescript.md)
+- [JavaScriptランタイム](./docs//js-runtime.md)

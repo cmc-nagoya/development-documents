@@ -62,16 +62,32 @@ import (
 )
 
 func say(s string) {
-    for i := 0; i < 5; i++ {
-        time.Sleep(100 * time.Millisecond)
-        fmt.Println(s)
-    }
+ for i := 0; i < 50; i++ {
+  time.Sleep(100 * time.Millisecond)
+ }
+ fmt.Println(s)
+}
+func say_async(s string, ch chan string) {
+ for i := 0; i < 50; i++ {
+  time.Sleep(100 * time.Millisecond)
+ }
+ fmt.Println(s)
+ ch <- s
 }
 
 func main() {
-    go say("world")
-    say("hello")
+ // 同期で実行される(終了を待つ)
+ say("hello")
+ // 非同期で実行される(終了を待たない)
+ go say("world")
+
+ // 非同期で実行される(終了を待つ)
+ ch := make(chan string)
+ defer close(ch)
+ go say_async("async", ch)
+ <-ch
 }
+
 ```
 
 **インターフェースとダックタイピング**\
@@ -82,33 +98,47 @@ package main
 
 import "fmt"
 
+package main
+
+import "fmt"
+
+// Speakerインターフェース
 type Speaker interface {
-    Speak() string
+ Speak() string
 }
 
 type Dog struct{}
 
 func (d Dog) Speak() string {
-    return "Woof!"
+ return "Woof!"
 }
 
 type Cat struct{}
 
 func (c Cat) Speak() string {
-    return "Meow!"
+ return "Meow!"
 }
 
 func MakeSpeak(s Speaker) {
-    fmt.Println(s.Speak())
+ fmt.Println(s.Speak())
+}
+
+type Human struct{}
+
+func (h Human) Speech() {
+ fmt.Println("Hello!")
 }
 
 func main() {
-    dog := Dog{}
-    cat := Cat{}
+ // Dog,CatはどちらもSpeakerインターフェースを実装しているので、MakeSpeak関数に渡すことができる
+ animals := []Speaker{Dog{}, Cat{}}
+ // animals:= []Speaker{Dog{}, Cat{}, Human{}} HumanはSpeakerインターフェースを実装していないのでエラーになる
 
-    MakeSpeak(dog)
-    MakeSpeak(cat)
+ for _, animal := range animals {
+  MakeSpeak(animal)
+ }
 }
+
 ```
 
 **エラーハンドリング**\
@@ -122,53 +152,24 @@ import (
     "os"
 )
 
+// エラーの可能性のある関数は2値返却型,もしくはエラーのみを返す
 func readFile(filename string) (string, error) {
     data, err := os.ReadFile(filename)
     if err != nil {
         return "", err
     }
+    // エラーがない場合はnilを返す
     return string(data), nil
 }
 
 func main() {
     content, err := readFile("example.txt")
+    // エラーが発生した場合の処理
     if err != nil {
         fmt.Println("Error reading file:", err)
         return
     }
     fmt.Println("File contents:", content)
-}
-```
-
-**構造体と組み込み**\
-Goは継承の代わりに構造体の組み込みを使用します。
-
-```go
-package main
-
-import "fmt"
-
-type Person struct {
-    Name string
-    Age  int
-}
-
-func (p Person) Introduce() {
-    fmt.Printf("Hello, I'm %s and I'm %d years old.\n", p.Name, p.Age)
-}
-
-type Employee struct {
-    Person
-    Company string
-}
-
-func main() {
-    emp := Employee{
-        Person:  Person{Name: "Alice", Age: 30},
-        Company: "Acme Inc.",
-    }
-    emp.Introduce()
-    fmt.Printf("I work at %s.\n", emp.Company)
 }
 ```
 
